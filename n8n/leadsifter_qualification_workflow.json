@@ -1,0 +1,294 @@
+{
+  "name": "LeadSifter WhatsApp Qualification Loop",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "start-qualification",
+        "responseMode": "onReceived",
+        "responseData": "{\n  \"status\": \"received\"\n}"
+      },
+      "id": "trigger_webhook",
+      "name": "FastAPI Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 240]
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8000/internal/broker/{{ $json.body.broker_id }}",
+        "sendHeaders": true,
+        "headersTemplates": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+            }
+          ]
+        }
+      },
+      "id": "get_broker",
+      "name": "Get Broker Credentials",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 240],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $node[\"Get Broker Credentials\"].json.phone_id }}/messages",
+        "sendHeaders": true,
+        "headersTemplates": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $node[\"Get Broker Credentials\"].json.meta_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"template\", \"template\": {\"name\": \"lead_qualification_start\", \"language\": {\"code\": \"en_US\"}}}"
+      },
+      "id": "send_whatsapp",
+      "name": "Send WhatsApp Template",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 240],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/internal/conversation",
+        "sendHeaders": true,
+        "headersTemplates": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"direction\": \"outbound\", \"body\": \"Sent WhatsApp qualification start template.\"}"
+      },
+      "id": "log_message",
+      "name": "Log Sent Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 240],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/internal/qualification",
+        "sendHeaders": true,
+        "headersTemplates": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"phone\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"execution_id\": \"{{ $execution.id }}\"}"
+      },
+      "id": "register_qualification",
+      "name": "Register Active Qualification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 240],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "webhookPath": "waiting",
+        "limit": "24",
+        "unit": "hours"
+      },
+      "id": "wait_node",
+      "name": "Wait For Reply",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1250, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "did_prospect_reply",
+      "name": "Did Prospect Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1450, 240]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://host.docker.internal:8000/internal/lead/{{ $('FastAPI Trigger').item.json.body.lead_id }}/status",
+        "sendHeaders": true,
+        "headersTemplates": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"status\": \"COLD\"}"
+      },
+      "id": "mark_cold",
+      "name": "Mark Lead Cold",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 440],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI lead qualifying agent for UAE real estate. Extract: 1. budget_min_aed and budget_max_aed, 2. timeline_days, 3. financing (mortgage or cash).\n\nIf any fields are missing, formulate the next polite question to ask them.\nReturn raw JSON matching this schema:\n{\n  \"budget_min_aed\": int or null,\n  \"budget_max_aed\": int or null,\n  \"timeline_days\": int or null,\n  \"financing\": string or null,\n  \"next_question\": string or null,\n  \"all_filled\": boolean\n}"
+            },
+            {
+              "role": "user",
+              "content": "=The prospect replied: \"{{ $json.body }}\""
+            }
+          ]
+        }
+      },
+      "id": "openai_extract",
+      "name": "Extract Qualification Fields",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1650, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.all_filled }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "condition_qualified",
+      "name": "Is Fully Qualified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1850, 240]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://host.docker.internal:8000/internal/lead/{{ $('FastAPI Trigger').item.json.body.lead_id }}/status",
+        "sendHeaders": true,
+        "headersTemplates": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"status\": \"QUALIFIED\"}"
+      },
+      "id": "mark_qualified",
+      "name": "Mark Lead Qualified",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2050, 140],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $node[\"Get Broker Credentials\"].json.phone_id }}/messages",
+        "sendHeaders": true,
+        "headersTemplates": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $node[\"Get Broker Credentials\"].json.meta_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"text\", \"text\": {\"body\": \"{{ $node[\\\"Extract Qualification Fields\\\"].json.next_question }}\"}}"
+      },
+      "id": "send_next_question",
+      "name": "Send Next WhatsApp Question",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2050, 340],
+      "continueOnFail": false
+    }
+  ],
+  "connections": {
+    "FastAPI Trigger": {
+      "main": [[{ "node": "Get Broker Credentials", "type": "main", "index": 0 }]]
+    },
+    "Get Broker Credentials": {
+      "main": [[{ "node": "Send WhatsApp Template", "type": "main", "index": 0 }]]
+    },
+    "Send WhatsApp Template": {
+      "main": [[{ "node": "Log Sent Message", "type": "main", "index": 0 }]]
+    },
+    "Log Sent Message": {
+      "main": [[{ "node": "Register Active Qualification", "type": "main", "index": 0 }]]
+    },
+    "Register Active Qualification": {
+      "main": [[{ "node": "Wait For Reply", "type": "main", "index": 0 }]]
+    },
+    "Wait For Reply": {
+      "main": [[{ "node": "Did Prospect Reply?", "type": "main", "index": 0 }]]
+    },
+    "Did Prospect Reply?": {
+      "main": [
+        [{ "node": "Extract Qualification Fields", "type": "main", "index": 0 }],
+        [{ "node": "Mark Lead Cold", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Qualification Fields": {
+      "main": [[{ "node": "Is Fully Qualified?", "type": "main", "index": 0 }]]
+    },
+    "Is Fully Qualified?": {
+      "main": [
+        [{ "node": "Mark Lead Qualified", "type": "main", "index": 0 }],
+        [{ "node": "Send Next WhatsApp Question", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Next WhatsApp Question": {
+      "main": [[{ "node": "Wait For Reply", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
