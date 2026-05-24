@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Header, Path, BackgroundTasks
+from pydantic import BaseModel
 from sqlalchemy import select, delete
 import structlog
 
@@ -119,4 +120,78 @@ async def update_lead_status(
             background_tasks.add_task(inject_lead, lead_id=lead_id)
             log.info("lead.queued_for_injection", lead_id=str(lead_id))
 
+    return {"status": "updated"}
+
+
+class LeadQualificationPayload(BaseModel):
+    budget_min_aed: int | None = None
+    budget_max_aed: int | None = None
+    timeline_days: int | None = None
+    financing: str | None = None
+
+
+@router.get('/lead/{lead_id}/context', dependencies=[Depends(verify_internal_key)])
+async def get_lead_context(lead_id: uuid.UUID = Path(...)):
+    """n8n calls this to fetch the current lead fields and the full conversation transcript."""
+    async with get_db() as db:
+        lead = await db.get(Lead, lead_id)
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+            
+        # Fetch conversation history
+        result = await db.execute(
+            select(ConversationMessage)
+            .where(ConversationMessage.lead_id == lead_id)
+            .order_by(ConversationMessage.sent_at.asc())
+        )
+        messages = result.scalars().all()
+        
+        # Build transcript string
+        transcript_lines = []
+        for msg in messages:
+            sender = "PROSPECT" if msg.direction == "inbound" else "BOT"
+            body = msg.body
+            if body.startswith("Sent WhatsApp qualification start template."):
+                body = "[Started conversation]"
+            transcript_lines.append(f"{sender}: {body}")
+            
+        transcript = "\n".join(transcript_lines)
+        
+        return {
+            "prospect_name": lead.prospect_name,
+            "phone": lead.phone,
+            "budget_min_aed": lead.budget_min_aed,
+            "budget_max_aed": lead.budget_max_aed,
+            "timeline_days": lead.timeline_days,
+            "financing": lead.financing,
+            "transcript": transcript
+        }
+
+
+@router.patch('/lead/{lead_id}/qualification', dependencies=[Depends(verify_internal_key)])
+async def update_lead_qualification(
+    lead_id: uuid.UUID = Path(...),
+    payload: LeadQualificationPayload = None
+):
+    """n8n calls this to update the lead's parsed qualification fields."""
+    if not payload:
+        raise HTTPException(status_code=400, detail="Missing payload")
+        
+    async with get_db() as db:
+        lead = await db.get(Lead, lead_id)
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+            
+        # Only update if the field is not None
+        if payload.budget_min_aed is not None:
+            lead.budget_min_aed = payload.budget_min_aed
+        if payload.budget_max_aed is not None:
+            lead.budget_max_aed = payload.budget_max_aed
+        if payload.timeline_days is not None:
+            lead.timeline_days = payload.timeline_days
+        if payload.financing is not None:
+            lead.financing = payload.financing
+            
+        await db.commit()
+        
     return {"status": "updated"}

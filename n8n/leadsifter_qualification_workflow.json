@@ -7,11 +7,14 @@
         "path": "start-qualification",
         "options": {}
       },
-      "id": "d8c536fe-e8b6-41d8-827c-c584cb6deea4",
+      "id": "48fed44d-3ce7-4d5c-b09e-9d1a434cdfb1",
       "name": "FastAPI Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [-2128, 160],
+      "position": [
+        -3168,
+        212
+      ],
       "webhookId": "e3e9d98a-b43c-477a-988b-b40f18e034c9"
     },
     {
@@ -22,17 +25,20 @@
           "parameters": [
             {
               "name": "X-Internal-Key",
-              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+              "value": "=leadsifter_n8n_dev_key_change_in_prod"
             }
           ]
         },
         "options": {}
       },
-      "id": "e7c438b5-335c-4f2a-abc7-3704a066005f",
+      "id": "e74333bb-3017-43e0-b919-1dbba3a0936a",
       "name": "Get Broker Credentials",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-1872, 180]
+      "position": [
+        -2944,
+        212
+      ]
     },
     {
       "parameters": {
@@ -52,11 +58,14 @@
         "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"template\", \"template\": {\"name\": \"lead_qualification_start\", \"language\": {\"code\": \"en_US\"}}}",
         "options": {}
       },
-      "id": "c89601d5-0bf5-434e-9d10-c3036568136f",
+      "id": "5993b725-0517-4dda-ba37-03cb8e5a34a6",
       "name": "Send WhatsApp Template",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-1648, 180]
+      "position": [
+        -2720,
+        212
+      ]
     },
     {
       "parameters": {
@@ -67,7 +76,7 @@
           "parameters": [
             {
               "name": "X-Internal-Key",
-              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+              "value": "=leadsifter_n8n_dev_key_change_in_prod"
             }
           ]
         },
@@ -76,11 +85,14 @@
         "jsonBody": "={\"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"direction\": \"outbound\", \"body\": \"Sent WhatsApp qualification start template.\"}",
         "options": {}
       },
-      "id": "8d639369-0634-436f-ba78-61e422e1b7f9",
+      "id": "73780bcb-16f1-4d2f-bfe3-7790e171963b",
       "name": "Log Sent Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-1424, 180],
+      "position": [
+        -2496,
+        212
+      ],
       "continueOnFail": true
     },
     {
@@ -92,7 +104,7 @@
           "parameters": [
             {
               "name": "X-Internal-Key",
-              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+              "value": "=leadsifter_n8n_dev_key_change_in_prod"
             }
           ]
         },
@@ -101,28 +113,29 @@
         "jsonBody": "={\"phone\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"execution_id\": \"{{ $execution.resumeUrl }}\"}",
         "options": {}
       },
-      "id": "register_qualification_node",
+      "id": "01add67f-b400-4975-94af-48f82cbc09f6",
       "name": "Register Active Qualification",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-1200, 180]
+      "position": [
+        -2272,
+        212
+      ]
     },
     {
       "parameters": {
         "resume": "webhook",
         "httpMethod": "POST",
-        "options": {
-          "limitWaitTime": true,
-          "limitType": "afterTimeInterval",
-          "resumeAmount": 24,
-          "resumeUnit": "hours"
-        }
+        "options": {}
       },
-      "id": "25832c1e-a05f-49f5-89a3-d3e43995a261",
+      "id": "8e47438b-8e3f-4ae7-b087-72c9c367dcee",
       "name": "Wait For Reply",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
-      "position": [-976, 180],
+      "position": [
+        -2048,
+        212
+      ],
       "webhookId": "05264028-7dd7-4893-be6f-30a258b7820b"
     },
     {
@@ -136,11 +149,14 @@
           ]
         }
       },
-      "id": "56803c69-a9c2-4495-8976-50b79d06a083",
+      "id": "62dcda0a-215d-46e6-924c-40013216953f",
       "name": "Did Prospect Reply?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [-752, 48]
+      "position": [
+        -1824,
+        140
+      ]
     },
     {
       "parameters": {
@@ -151,7 +167,7 @@
           "parameters": [
             {
               "name": "X-Internal-Key",
-              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+              "value": "=leadsifter_n8n_dev_key_change_in_prod"
             }
           ]
         },
@@ -160,33 +176,43 @@
         "jsonBody": "{\"status\": \"COLD\"}",
         "options": {}
       },
-      "id": "738055bd-41fd-44a0-a3d0-4c6d3a33e37f",
+      "id": "ca33ae84-1660-4d26-b745-fff9723a213a",
       "name": "Mark Lead Cold",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-432, 256]
+      "position": [
+        -1536,
+        288
+      ]
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are a UAE real estate lead qualification agent conducting a WhatsApp conversation.\n\nThe prospect just replied: \"{{ $json.body }}\"\n\nExtract the following fields from their reply:\n- budget_min_aed: minimum budget in AED (integer, e.g. 500000 — or null)\n- budget_max_aed: maximum budget in AED (integer, e.g. 2000000 — or null)\n- timeline_days: how many days until they want to complete the purchase (integer — or null)\n- financing: \"mortgage\" or \"cash\" (or null if not mentioned)\n\nIf any field is still missing after reading their reply, write a single concise and friendly follow-up question in next_question to gather the next missing piece of information. Ask for one thing at a time.\n\nSet all_filled to true ONLY when all four fields (budget_min_aed, budget_max_aed, timeline_days, financing) are present.\n\nReturn ONLY a valid JSON object with exactly these six keys and no other text:\n{\n  \"budget_min_aed\": integer or null,\n  \"budget_max_aed\": integer or null,\n  \"timeline_days\": integer or null,\n  \"financing\": \"mortgage\" or \"cash\" or null,\n  \"next_question\": string or null,\n  \"all_filled\": boolean\n}",
+        "text": "=You are a UAE real estate lead qualification agent conducting a WhatsApp conversation.\n\nHere is the conversation history so far:\n{{ $json.transcript }}\n\nThe prospect just replied with the last message in that transcript.\n\nCurrent known fields in our DB:\n- budget_min_aed: {{ $json.budget_min_aed }}\n- budget_max_aed: {{ $json.budget_max_aed }}\n- timeline_days: {{ $json.timeline_days }}\n- financing: {{ $json.financing }}\n\nExtract the fields from the prospect's latest reply and update the values. If a field is already filled and the prospect did not correct it, keep the existing value.\nIf any of the four fields (budget_min_aed, budget_max_aed, timeline_days, financing) is still missing, write a single concise and friendly follow-up question in next_question.\nOnce all four fields (budget_min_aed, budget_max_aed, timeline_days, financing) are present, you MUST set all_filled to true and next_question to null. Do NOT ask any further questions (such as property type, location, bedroom count, etc.) once these four fields are filled.\nAlso, set all_filled to true and next_question to null if the prospect explicitly requests to stop the conversation, indicates they are not interested in buying, or is hostile/unresponsive.\n\nReturn ONLY a valid JSON object with exactly these six keys and no other text:\n{\n  \"budget_min_aed\": integer or null,\n  \"budget_max_aed\": integer or null,\n  \"timeline_days\": integer or null,\n  \"financing\": \"mortgage\" or \"cash\" or null,\n  \"next_question\": string or null,\n  \"all_filled\": boolean\n}",
         "batching": {}
       },
-      "id": "0daf71fa-8315-4b5b-bbe5-980da2f5850c",
+      "id": "a0dd917e-5b70-4fe3-a582-483e0c6ff1ec",
       "name": "Basic LLM Chain",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
-      "position": [-496, -144]
+      "position": [
+        -1376,
+        -112
+      ]
     },
     {
       "parameters": {
+        "model": "llama-3.3-70b-versatile",
         "options": {}
       },
-      "id": "b7f7d2ae-e6cb-472b-8154-70fb74e0e8af",
+      "id": "6fd0ebc1-f3eb-4a68-9530-fa3226e8c478",
       "name": "Groq Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
       "typeVersion": 1,
-      "position": [-424, 80],
+      "position": [
+        -1304,
+        112
+      ],
       "credentials": {
         "groqApi": {
           "id": "cIvKVyi5h2syxTHo",
@@ -196,30 +222,36 @@
     },
     {
       "parameters": {
-        "jsCode": "// The Groq LLM Chain returns the response as raw text in $json.text.\n// Parse it into a structured object so downstream nodes can use $json.all_filled etc.\nconst raw = $input.first().json.text;\n\ntry {\n  const parsed = JSON.parse(raw);\n  return [{ json: parsed }];\n} catch (e) {\n  // LLM returned non-JSON — return safe defaults and ask a recovery question\n  return [{ json: {\n    budget_min_aed: null,\n    budget_max_aed: null,\n    timeline_days: null,\n    financing: null,\n    next_question: \"Could you share your budget range in AED and your ideal move-in timeline?\",\n    all_filled: false\n  }}];\n}"
+        "jsCode": "// The Groq LLM Chain returns the response as raw text in $json.text.\n// Parse it into a structured object so downstream nodes can use $json.all_filled etc.\nlet raw = $input.first().json.text;\n\nconst firstBrace = raw.indexOf('{');\nconst lastBrace = raw.lastIndexOf('}');\nif (firstBrace !== -1 && lastBrace !== -1) {\n  raw = raw.substring(firstBrace, lastBrace + 1);\n}\n\ntry {\n  const parsed = JSON.parse(raw);\n  return [{ json: parsed }];\n} catch (e) {\n  // LLM returned non-JSON \u2014 return safe defaults and ask a recovery question\n  return [{ json: {\n    budget_min_aed: null,\n    budget_max_aed: null,\n    timeline_days: null,\n    financing: null,\n    next_question: \"Could you share your budget range in AED and your ideal move-in timeline?\",\n    all_filled: false\n  }}];\n}"
       },
-      "id": "parse_llm_output",
+      "id": "ae78546f-d59c-4ead-ae04-d31cb4f7aecc",
       "name": "Parse LLM Output",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-256, -144]
+      "position": [
+        -1152,
+        -8
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "boolean": [
             {
-              "value1": "={{ $json.all_filled }}",
+              "value1": "={{ $('Parse LLM Output').item.json.all_filled }}",
               "value2": true
             }
           ]
         }
       },
-      "id": "fb1f48a0-e6bd-4c00-a20d-203ceb8b3032",
+      "id": "8ffcf17a-08a9-4edf-b1ca-3b78327aa308",
       "name": "Is Fully Qualified?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [-32, -40]
+      "position": [
+        -704,
+        -8
+      ]
     },
     {
       "parameters": {
@@ -230,7 +262,7 @@
           "parameters": [
             {
               "name": "X-Internal-Key",
-              "value": "={{ $env.N8N_INTERNAL_KEY }}"
+              "value": "=leadsifter_n8n_dev_key_change_in_prod"
             }
           ]
         },
@@ -239,11 +271,14 @@
         "jsonBody": "{\"status\": \"QUALIFIED\"}",
         "options": {}
       },
-      "id": "5a676c84-01e4-49b3-9ce6-e00b56f79852",
+      "id": "fba04c6c-c8a4-4e08-863d-fddf2f42b484",
       "name": "Mark Lead Qualified",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [192, -88]
+      "position": [
+        -480,
+        -56
+      ]
     },
     {
       "parameters": {
@@ -260,66 +295,246 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"text\", \"text\": {\"body\": \"{{ $json.next_question }}\"}}",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('FastAPI Trigger').item.json.body.phone, type: 'text', text: { body: $('Parse LLM Output').item.json.next_question } }) }}",
         "options": {}
       },
-      "id": "029b0276-de0e-4de5-aae4-ba319b682953",
+      "id": "4e19c3a2-5162-48bb-a3c4-9afa7c92a51f",
       "name": "Send Next WhatsApp Question",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [192, 352]
+      "position": [
+        -480,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8000/internal/lead/{{ $('FastAPI Trigger').item.json.body.lead_id }}/context",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "leadsifter_n8n_dev_key_change_in_prod"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get_lead_context_node_id",
+      "name": "Get Lead Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1600,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://host.docker.internal:8000/internal/lead/{{ $('FastAPI Trigger').item.json.body.lead_id }}/qualification",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "leadsifter_n8n_dev_key_change_in_prod"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ budget_min_aed: $json.budget_min_aed ?? null, budget_max_aed: $json.budget_max_aed ?? null, timeline_days: $json.timeline_days ?? null, financing: $json.financing ?? null }) }}",
+        "options": {}
+      },
+      "id": "update_lead_qualification_node_id",
+      "name": "Update Lead Qualification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -928,
+        -8
+      ]
     }
   ],
   "pinData": {},
   "connections": {
     "FastAPI Trigger": {
-      "main": [[{ "node": "Get Broker Credentials", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Get Broker Credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Broker Credentials": {
-      "main": [[{ "node": "Send WhatsApp Template", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Send WhatsApp Template": {
-      "main": [[{ "node": "Log Sent Message", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Log Sent Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Log Sent Message": {
-      "main": [[{ "node": "Register Active Qualification", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Register Active Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Register Active Qualification": {
-      "main": [[{ "node": "Wait For Reply", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Wait For Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Wait For Reply": {
-      "main": [[{ "node": "Did Prospect Reply?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Did Prospect Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Did Prospect Reply?": {
       "main": [
-        [{ "node": "Basic LLM Chain", "type": "main", "index": 0 }],
-        [{ "node": "Mark Lead Cold", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Get Lead Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Cold",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Basic LLM Chain": {
-      "main": [[{ "node": "Parse LLM Output", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse LLM Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse LLM Output": {
-      "main": [[{ "node": "Is Fully Qualified?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Update Lead Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is Fully Qualified?": {
       "main": [
-        [{ "node": "Mark Lead Qualified", "type": "main", "index": 0 }],
-        [{ "node": "Send Next WhatsApp Question", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Mark Lead Qualified",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Next WhatsApp Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Send Next WhatsApp Question": {
-      "main": [[{ "node": "Wait For Reply", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Wait For Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Groq Chat Model": {
-      "ai_languageModel": [[{ "node": "Basic LLM Chain", "type": "ai_languageModel", "index": 0 }]]
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lead Context": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead Qualification": {
+      "main": [
+        [
+          {
+            "node": "Is Fully Qualified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
-  "versionId": "450b9a54-aea8-4d25-a3f3-3f4dab3862ec",
+  "versionId": "d4da3cee-74dc-457d-90b5-5cb2f2d102d4",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8daf817fd1971cde1f7726192e5fb94fe6cdd1b2c2efa3fc9592964e50b7e285"
