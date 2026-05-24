@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadSifter — WhatsApp Testing Sandbox</title>
+    <!-- Modern Google Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0f111a;
+            --sidebar-bg: rgba(20, 24, 38, 0.6);
+            --chat-bg: rgba(16, 18, 30, 0.4);
+            --primary-glow: linear-gradient(135deg, #6366f1, #a855f7);
+            --bubble-outbound: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            --bubble-inbound: rgba(255, 255, 255, 0.08);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --status-qualifying: #eab308;
+            --status-qualified: #22c55e;
+            --status-cold: #ef4444;
+            --status-raw: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+        }
+
+        /* App Layout */
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(20px);
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            width: 360px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: flex-col;
+            flex-shrink: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            background: var(--primary-glow);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .search-bar {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .chat-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .chat-item {
+            display: flex;
+            flex-direction: column;
+            padding: 14px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+        }
+
+        .chat-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-item.active {
+            background: rgba(99, 102, 241, 0.12);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .chat-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .chat-item-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-qualifying { background-color: rgba(234, 179, 8, 0.15); color: var(--status-qualifying); }
+        .badge-qualified { background-color: rgba(34, 197, 94, 0.15); color: var(--status-qualified); }
+        .badge-cold { background-color: rgba(239, 68, 68, 0.15); color: var(--status-cold); }
+        .badge-raw { background-color: rgba(107, 114, 128, 0.15); color: var(--status-raw); }
+
+        .chat-item-phone {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Chat area styling */
+        .chat-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--chat-bg);
+            height: 100%;
+        }
+
+        /* Empty state view */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.4;
+            color: #6366f1;
+        }
+
+        .empty-state h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            padding: 20px 32px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(15, 17, 26, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .active-user-info h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .active-user-info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Message pane */
+        .messages-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .message-row.outbound {
+            justify-content: flex-start;
+        }
+
+        .message-row.inbound {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 65%;
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .message-row.outbound .message-bubble {
+            background: var(--bubble-inbound);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Bot logo badge */
+        .message-row.outbound .message-bubble::before {
+            content: "BOT";
+            position: absolute;
+            top: -18px;
+            left: 2px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #6366f1;
+            letter-spacing: 0.5px;
+        }
+
+        .message-row.inbound .message-bubble {
+            background: var(--bubble-outbound);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-row.inbound .message-bubble::before {
+            content: "PROSPECT";
+            position: absolute;
+            top: -18px;
+            right: 2px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 6px;
+            text-align: right;
+            display: block;
+        }
+
+        .message-row.outbound .message-time {
+            color: var(--text-secondary);
+        }
+
+        /* Chat Input section */
+        .chat-input-area {
+            padding: 24px 32px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(15, 17, 26, 0.4);
+        }
+
+        .presets-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .presets-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: var(--text-primary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .input-form {
+            display: flex;
+            gap: 12px;
+        }
+
+        .message-input {
+            flex-grow: 1;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .send-btn {
+            background: var(--primary-glow);
+            color: white;
+            border: none;
+            padding: 0 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>LeadSifter</h1>
+                <p>WA Chat Sandbox</p>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="search" class="search-input" placeholder="Search by name or phone...">
+            </div>
+            <div class="chat-list" id="chats-list">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chat-pane">
+            <!-- Empty state -->
+            <div class="empty-state" id="no-chat-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <h3>No Lead Selected</h3>
+                <p>Select an active qualification lead from the sidebar to inspect the flow or send replies.</p>
+            </div>
+
+            <!-- Active chat pane (hidden by default) -->
+            <div id="active-chat-state" style="display: none; height: 100%; flex-direction: column;">
+                <div class="chat-header">
+                    <div class="active-user-info">
+                        <h2 id="active-name">Prospect Name</h2>
+                        <p id="active-phone">+971 00 000 0000</p>
+                    </div>
+                    <div>
+                        <span class="status-badge" id="active-status">QUALIFYING</span>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messages-box">
+                    <!-- Messages loaded dynamically -->
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="presets-title">Quick Reply Preset Templates</div>
+                    <div class="presets-list">
+                        <button class="preset-btn" onclick="usePreset('Hi, yes I\'m interested! My budget is 1.2M AED. I\'m paying cash.')">Perfect Match (Cash, 1.2M)</button>
+                        <button class="preset-btn" onclick="usePreset('I have about 3 million AED and want to buy with a bank mortgage.')">Mortgage (3M)</button>
+                        <button class="preset-btn" onclick="usePreset('My budget is 700k. I want to buy cash and move in within 30 days.')">Fast Buyer (Cash, 700k, 30 days)</button>
+                        <button class="preset-btn" onclick="usePreset('Actually, my budget is too low, only 200k. Also, I\'m not looking to buy soon.')">Unqualified (Low budget/timeline)</button>
+                        <button class="preset-btn" onclick="usePreset('I\'m busy, please call me next month.')">Postponed / Cold</button>
+                    </div>
+                    
+                    <form class="input-form" onsubmit="sendMessage(event)">
+                        <input type="text" id="message-body" class="message-input" placeholder="Type a simulated message as the prospect..." autocomplete="off">
+                        <button type="submit" class="send-btn">Simulate Reply</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let activePhone = null;
+        let activeLeadId = null;
+        let lastMessageCount = 0;
+        let chats = [];
+
+        // Fetch active chats list
+        async function fetchChats() {
+            try {
+                const searchVal = document.getElementById('search').value.toLowerCase();
+                const res = await fetch('/mock/whatsapp/chats');
+                if (!res.ok) throw new Error("Failed to fetch chats");
+                chats = await res.json();
+                
+                const list = document.getElementById('chats-list');
+                list.innerHTML = '';
+                
+                const filtered = chats.filter(c => 
+                    (c.prospect_name || '').toLowerCase().includes(searchVal) ||
+                    c.phone.includes(searchVal)
+                );
+
+                if (filtered.length === 0) {
+                    list.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 20px; font-size: 13px;">No active qualification chats found.</div>';
+                    return;
+                }
+
+                filtered.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = `chat-item ${c.phone === activePhone ? 'active' : ''}`;
+                    div.onclick = () => selectChat(c.phone, c.id, c.prospect_name, c.status);
+                    
+                    div.innerHTML = `
+                        <div class="chat-item-header">
+                            <span class="chat-item-name">${escapeHtml(c.prospect_name || 'Unknown Prospect')}</span>
+                            <span class="status-badge badge-${(c.status || '').toLowerCase()}">${c.status || 'RAW'}</span>
+                        </div>
+                        <div class="chat-item-phone">${c.phone}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Escape helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Select a chat
+        function selectChat(phone, leadId, name, status) {
+            activePhone = phone;
+            activeLeadId = leadId;
+            lastMessageCount = 0;
+            
+            document.getElementById('no-chat-state').style.display = 'none';
+            document.getElementById('active-chat-state').style.display = 'flex';
+            
+            document.getElementById('active-name').innerText = name || 'Unknown Prospect';
+            document.getElementById('active-phone').innerText = phone;
+            
+            const badge = document.getElementById('active-status');
+            badge.className = `status-badge badge-${(status || '').toLowerCase()}`;
+            badge.innerText = status || 'RAW';
+            
+            // Re-render chat items to show active state
+            const items = document.querySelectorAll('.chat-item');
+            items.forEach(el => el.classList.remove('active'));
+            fetchChats();
+            
+            fetchMessages(true);
+        }
+
+        // Fetch messages for active chat
+        async function fetchMessages(forceScroll = false) {
+            if (!activePhone) return;
+            try {
+                const res = await fetch(`/mock/whatsapp/messages?phone=${encodeURIComponent(activePhone)}`);
+                if (!res.ok) throw new Error("Failed to fetch messages");
+                const messages = await res.json();
+                
+                const box = document.getElementById('messages-box');
+                
+                // Only render if count changed to prevent blinking/scroll interruption
+                if (messages.length !== lastMessageCount || forceScroll) {
+                    box.innerHTML = '';
+                    messages.forEach(msg => {
+                        const row = document.createElement('div');
+                        row.className = `message-row ${msg.direction === 'outbound' ? 'outbound' : 'inbound'}`;
+                        
+                        const time = new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        
+                        row.innerHTML = `
+                            <div class="message-bubble">
+                                <div>${escapeHtml(msg.body)}</div>
+                                <span class="message-time">${time}</span>
+                            </div>
+                        `;
+                        box.appendChild(row);
+                    });
+                    
+                    lastMessageCount = messages.length;
+                    box.scrollTop = box.scrollHeight;
+                }
+                
+                // Keep status badge updated if it changed in backend
+                const currentChatObj = chats.find(c => c.phone === activePhone);
+                if (currentChatObj) {
+                    const badge = document.getElementById('active-status');
+                    badge.className = `status-badge badge-${(currentChatObj.status || '').toLowerCase()}`;
+                    badge.innerText = currentChatObj.status || 'RAW';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Use a quick preset
+        function usePreset(text) {
+            document.getElementById('message-body').value = text;
+            document.getElementById('message-body').focus();
+        }
+
+        // Send a simulated reply
+        async function sendMessage(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('message-body');
+            const body = input.value.trim();
+            if (!body || !activePhone) return;
+            
+            input.value = '';
+            
+            try {
+                const res = await fetch('/mock/whatsapp/send-reply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: activePhone, body: body })
+                });
+                
+                if (!res.ok) {
+                    const errInfo = await res.json();
+                    alert("Error sending message: " + (errInfo.detail || res.statusText));
+                    return;
+                }
+                
+                // Trigger immediate update
+                fetchMessages(true);
+            } catch (err) {
+                alert("Network error simulating reply: " + err.message);
+            }
+        }
+
+        // Initial setup and polling loops
+        fetchChats();
+        
+        // Listen to search changes
+        document.getElementById('search').addEventListener('input', fetchChats);
+
+        // Poll for updates every 2 seconds
+        setInterval(() => {
+            fetchChats();
+            fetchMessages();
+        }, 2000);
+    </script>
+</body>
+</html>

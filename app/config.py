@@ -7,9 +7,13 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # OpenAI
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = ''
     OPENAI_MODEL_PARSE: str = 'gpt-4o-mini'
     OPENAI_MODEL_CONVO: str = 'gpt-4o-mini'
+
+    # Groq (alternative AI provider — used when GROQ_API_KEY is set)
+    GROQ_API_KEY: str = ''
+    GROQ_MODEL_PARSE: str = 'llama-3.3-70b-versatile'
 
     # External Webhooks & Crypto
     SENDGRID_WEBHOOK_SECRET: str = ''

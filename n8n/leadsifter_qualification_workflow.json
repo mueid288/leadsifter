@@ -5,41 +5,41 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "start-qualification",
-        "responseMode": "onReceived",
-        "responseData": "{\n  \"status\": \"received\"\n}"
+        "options": {}
       },
-      "id": "trigger_webhook",
+      "id": "d8c536fe-e8b6-41d8-827c-c584cb6deea4",
       "name": "FastAPI Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 240]
+      "position": [-2128, 160],
+      "webhookId": "e3e9d98a-b43c-477a-988b-b40f18e034c9"
     },
     {
       "parameters": {
         "url": "=http://host.docker.internal:8000/internal/broker/{{ $json.body.broker_id }}",
         "sendHeaders": true,
-        "headersTemplates": {
+        "headerParameters": {
           "parameters": [
             {
               "name": "X-Internal-Key",
               "value": "={{ $env.N8N_INTERNAL_KEY }}"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "get_broker",
+      "id": "e7c438b5-335c-4f2a-abc7-3704a066005f",
       "name": "Get Broker Credentials",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [450, 240],
-      "continueOnFail": false
+      "position": [-1872, 180]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v19.0/{{ $node[\"Get Broker Credentials\"].json.phone_id }}/messages",
+        "url": "={{ $node[\"Get Broker Credentials\"].json.meta_api_base || 'https://graph.facebook.com' }}/v19.0/{{ $node[\"Get Broker Credentials\"].json.phone_id }}/messages",
         "sendHeaders": true,
-        "headersTemplates": {
+        "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
@@ -49,21 +49,21 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"template\", \"template\": {\"name\": \"lead_qualification_start\", \"language\": {\"code\": \"en_US\"}}}"
+        "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"template\", \"template\": {\"name\": \"lead_qualification_start\", \"language\": {\"code\": \"en_US\"}}}",
+        "options": {}
       },
-      "id": "send_whatsapp",
+      "id": "c89601d5-0bf5-434e-9d10-c3036568136f",
       "name": "Send WhatsApp Template",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 240],
-      "continueOnFail": false
+      "position": [-1648, 180]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://host.docker.internal:8000/internal/conversation",
         "sendHeaders": true,
-        "headersTemplates": {
+        "headerParameters": {
           "parameters": [
             {
               "name": "X-Internal-Key",
@@ -73,13 +73,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"direction\": \"outbound\", \"body\": \"Sent WhatsApp qualification start template.\"}"
+        "jsonBody": "={\"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"direction\": \"outbound\", \"body\": \"Sent WhatsApp qualification start template.\"}",
+        "options": {}
       },
-      "id": "log_message",
+      "id": "8d639369-0634-436f-ba78-61e422e1b7f9",
       "name": "Log Sent Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [850, 240],
+      "position": [-1424, 180],
       "continueOnFail": true
     },
     {
@@ -87,7 +88,7 @@
         "method": "POST",
         "url": "http://host.docker.internal:8000/internal/qualification",
         "sendHeaders": true,
-        "headersTemplates": {
+        "headerParameters": {
           "parameters": [
             {
               "name": "X-Internal-Key",
@@ -97,27 +98,32 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"phone\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"execution_id\": \"{{ $execution.id }}\"}"
+        "jsonBody": "={\"phone\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"lead_id\": \"{{ $('FastAPI Trigger').item.json.body.lead_id }}\", \"execution_id\": \"{{ $execution.resumeUrl }}\"}",
+        "options": {}
       },
-      "id": "register_qualification",
+      "id": "register_qualification_node",
       "name": "Register Active Qualification",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1050, 240],
-      "continueOnFail": false
+      "position": [-1200, 180]
     },
     {
       "parameters": {
         "resume": "webhook",
-        "webhookPath": "waiting",
-        "limit": "24",
-        "unit": "hours"
+        "httpMethod": "POST",
+        "options": {
+          "limitWaitTime": true,
+          "limitType": "afterTimeInterval",
+          "resumeAmount": 24,
+          "resumeUnit": "hours"
+        }
       },
-      "id": "wait_node",
+      "id": "25832c1e-a05f-49f5-89a3-d3e43995a261",
       "name": "Wait For Reply",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
-      "position": [1250, 240]
+      "position": [-976, 180],
+      "webhookId": "05264028-7dd7-4893-be6f-30a258b7820b"
     },
     {
       "parameters": {
@@ -130,18 +136,18 @@
           ]
         }
       },
-      "id": "did_prospect_reply",
+      "id": "56803c69-a9c2-4495-8976-50b79d06a083",
       "name": "Did Prospect Reply?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1450, 240]
+      "position": [-752, 48]
     },
     {
       "parameters": {
         "method": "PATCH",
         "url": "=http://host.docker.internal:8000/internal/lead/{{ $('FastAPI Trigger').item.json.body.lead_id }}/status",
         "sendHeaders": true,
-        "headersTemplates": {
+        "headerParameters": {
           "parameters": [
             {
               "name": "X-Internal-Key",
@@ -151,37 +157,52 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"status\": \"COLD\"}"
+        "jsonBody": "{\"status\": \"COLD\"}",
+        "options": {}
       },
-      "id": "mark_cold",
+      "id": "738055bd-41fd-44a0-a3d0-4c6d3a33e37f",
       "name": "Mark Lead Cold",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1450, 440],
-      "continueOnFail": false
+      "position": [-432, 256]
     },
     {
       "parameters": {
-        "resource": "chat",
-        "model": "gpt-4o-mini",
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "You are an AI lead qualifying agent for UAE real estate. Extract: 1. budget_min_aed and budget_max_aed, 2. timeline_days, 3. financing (mortgage or cash).\n\nIf any fields are missing, formulate the next polite question to ask them.\nReturn raw JSON matching this schema:\n{\n  \"budget_min_aed\": int or null,\n  \"budget_max_aed\": int or null,\n  \"timeline_days\": int or null,\n  \"financing\": string or null,\n  \"next_question\": string or null,\n  \"all_filled\": boolean\n}"
-            },
-            {
-              "role": "user",
-              "content": "=The prospect replied: \"{{ $json.body }}\""
-            }
-          ]
-        }
+        "promptType": "define",
+        "text": "=You are a UAE real estate lead qualification agent conducting a WhatsApp conversation.\n\nThe prospect just replied: \"{{ $json.body }}\"\n\nExtract the following fields from their reply:\n- budget_min_aed: minimum budget in AED (integer, e.g. 500000 — or null)\n- budget_max_aed: maximum budget in AED (integer, e.g. 2000000 — or null)\n- timeline_days: how many days until they want to complete the purchase (integer — or null)\n- financing: \"mortgage\" or \"cash\" (or null if not mentioned)\n\nIf any field is still missing after reading their reply, write a single concise and friendly follow-up question in next_question to gather the next missing piece of information. Ask for one thing at a time.\n\nSet all_filled to true ONLY when all four fields (budget_min_aed, budget_max_aed, timeline_days, financing) are present.\n\nReturn ONLY a valid JSON object with exactly these six keys and no other text:\n{\n  \"budget_min_aed\": integer or null,\n  \"budget_max_aed\": integer or null,\n  \"timeline_days\": integer or null,\n  \"financing\": \"mortgage\" or \"cash\" or null,\n  \"next_question\": string or null,\n  \"all_filled\": boolean\n}",
+        "batching": {}
       },
-      "id": "openai_extract",
-      "name": "Extract Qualification Fields",
-      "type": "n8n-nodes-base.openAi",
+      "id": "0daf71fa-8315-4b5b-bbe5-980da2f5850c",
+      "name": "Basic LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [-496, -144]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b7f7d2ae-e6cb-472b-8154-70fb74e0e8af",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
       "typeVersion": 1,
-      "position": [1650, 240]
+      "position": [-424, 80],
+      "credentials": {
+        "groqApi": {
+          "id": "cIvKVyi5h2syxTHo",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// The Groq LLM Chain returns the response as raw text in $json.text.\n// Parse it into a structured object so downstream nodes can use $json.all_filled etc.\nconst raw = $input.first().json.text;\n\ntry {\n  const parsed = JSON.parse(raw);\n  return [{ json: parsed }];\n} catch (e) {\n  // LLM returned non-JSON — return safe defaults and ask a recovery question\n  return [{ json: {\n    budget_min_aed: null,\n    budget_max_aed: null,\n    timeline_days: null,\n    financing: null,\n    next_question: \"Could you share your budget range in AED and your ideal move-in timeline?\",\n    all_filled: false\n  }}];\n}"
+      },
+      "id": "parse_llm_output",
+      "name": "Parse LLM Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-256, -144]
     },
     {
       "parameters": {
@@ -194,18 +215,18 @@
           ]
         }
       },
-      "id": "condition_qualified",
+      "id": "fb1f48a0-e6bd-4c00-a20d-203ceb8b3032",
       "name": "Is Fully Qualified?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1850, 240]
+      "position": [-32, -40]
     },
     {
       "parameters": {
         "method": "PATCH",
         "url": "=http://host.docker.internal:8000/internal/lead/{{ $('FastAPI Trigger').item.json.body.lead_id }}/status",
         "sendHeaders": true,
-        "headersTemplates": {
+        "headerParameters": {
           "parameters": [
             {
               "name": "X-Internal-Key",
@@ -215,21 +236,21 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"status\": \"QUALIFIED\"}"
+        "jsonBody": "{\"status\": \"QUALIFIED\"}",
+        "options": {}
       },
-      "id": "mark_qualified",
+      "id": "5a676c84-01e4-49b3-9ce6-e00b56f79852",
       "name": "Mark Lead Qualified",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2050, 140],
-      "continueOnFail": false
+      "position": [192, -88]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v19.0/{{ $node[\"Get Broker Credentials\"].json.phone_id }}/messages",
+        "url": "={{ $node[\"Get Broker Credentials\"].json.meta_api_base || 'https://graph.facebook.com' }}/v19.0/{{ $node[\"Get Broker Credentials\"].json.phone_id }}/messages",
         "sendHeaders": true,
-        "headersTemplates": {
+        "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
@@ -239,16 +260,17 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"text\", \"text\": {\"body\": \"{{ $node[\\\"Extract Qualification Fields\\\"].json.next_question }}\"}}"
+        "jsonBody": "={\"messaging_product\": \"whatsapp\", \"to\": \"{{ $('FastAPI Trigger').item.json.body.phone }}\", \"type\": \"text\", \"text\": {\"body\": \"{{ $json.next_question }}\"}}",
+        "options": {}
       },
-      "id": "send_next_question",
+      "id": "029b0276-de0e-4de5-aae4-ba319b682953",
       "name": "Send Next WhatsApp Question",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2050, 340],
-      "continueOnFail": false
+      "position": [192, 352]
     }
   ],
+  "pinData": {},
   "connections": {
     "FastAPI Trigger": {
       "main": [[{ "node": "Get Broker Credentials", "type": "main", "index": 0 }]]
@@ -270,11 +292,14 @@
     },
     "Did Prospect Reply?": {
       "main": [
-        [{ "node": "Extract Qualification Fields", "type": "main", "index": 0 }],
+        [{ "node": "Basic LLM Chain", "type": "main", "index": 0 }],
         [{ "node": "Mark Lead Cold", "type": "main", "index": 0 }]
       ]
     },
-    "Extract Qualification Fields": {
+    "Basic LLM Chain": {
+      "main": [[{ "node": "Parse LLM Output", "type": "main", "index": 0 }]]
+    },
+    "Parse LLM Output": {
       "main": [[{ "node": "Is Fully Qualified?", "type": "main", "index": 0 }]]
     },
     "Is Fully Qualified?": {
@@ -285,10 +310,20 @@
     },
     "Send Next WhatsApp Question": {
       "main": [[{ "node": "Wait For Reply", "type": "main", "index": 0 }]]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [[{ "node": "Basic LLM Chain", "type": "ai_languageModel", "index": 0 }]]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
-  }
+  },
+  "versionId": "450b9a54-aea8-4d25-a3f3-3f4dab3862ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8daf817fd1971cde1f7726192e5fb94fe6cdd1b2c2efa3fc9592964e50b7e285"
+  },
+  "id": "Ego3MXIbb69i5iPG",
+  "tags": []
 }

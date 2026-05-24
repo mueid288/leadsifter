@@ -32,7 +32,10 @@ class N8NWorkflowAdapter:
         self, execution_id: str, body: str, from_number: str
     ) -> None:
         """POST to the n8n webhook-waiting endpoint to resume a paused execution. Logs on failure."""
-        url = f"{settings.N8N_WEBHOOK_BASE}/webhook-waiting/{execution_id}"
+        if execution_id.startswith("http://") or execution_id.startswith("https://"):
+            url = execution_id
+        else:
+            url = f"{settings.N8N_WEBHOOK_BASE}/webhook-waiting/{execution_id}"
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 await client.post(url, json={"body": body, "from": from_number})

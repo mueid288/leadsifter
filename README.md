@@ -193,6 +193,34 @@ This starts PostgreSQL, n8n, and the LeadSifter API together. The API overrides 
 
 ---
 
+## Local Testing & WhatsApp Sandbox
+
+For local development and testing, LeadSifter includes a **Zero-Dependency Mock WhatsApp API & Sandbox UI**. This allows you to simulate the entire WhatsApp qualification loop interactively in your browser without connecting a real WhatsApp account or making requests to Meta's servers.
+
+### 1. Enable Sandbox
+Ensure your `.env` has `DEBUG=true` enabled:
+```env
+DEBUG=true
+```
+
+### 2. Access the Chat Sandbox
+Open your browser and navigate to:
+`http://localhost:8000/mock/whatsapp/sandbox`
+
+### 3. Verification & Usage Flow
+1. **Inject a mock lead**: Send a simulated email webhook request:
+   ```bash
+   curl -X POST http://localhost:8000/webhook/email \
+     -F "to=testagency-1faf4b@inbound.leadsifter.io" \
+     -F "from=buyer@gmail.com" \
+     -F "subject=Inquiry about property BAY-001" \
+     -F "text=Hi, I'm Ahmed. My number is +971501234567. Interested in BAY-001."
+   ```
+2. **Interact**: Select the lead in the Sandbox UI. You will see the welcome template message.
+3. **Simulate Prospect**: Type a message (or click one of the quick preset buttons) and click **Simulate Reply**. The n8n workflow will process the message and the bot's next question will automatically appear in the chat history!
+
+---
+
 ## Broker Provisioning
 
 Create a broker via the admin API:

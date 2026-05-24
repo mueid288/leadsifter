@@ -12,7 +12,6 @@ def configure_logging() -> None:
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
-        structlog.stdlib.add_logger_name,
     ]
     renderer = (
         structlog.dev.ConsoleRenderer()
@@ -50,3 +49,8 @@ app.include_router(email_webhook.router, prefix='/webhook')
 app.include_router(whatsapp_webhook.router, prefix='/webhook')
 app.include_router(broker.router, prefix='/broker')
 app.include_router(internal.router, prefix='/internal', tags=["Internal"])
+
+if settings.DEBUG:
+    from app.routers import mock_whatsapp
+    app.include_router(mock_whatsapp.router, prefix='/mock')
+

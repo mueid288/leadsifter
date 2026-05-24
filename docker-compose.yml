@@ -33,6 +33,8 @@ services:
       DB_POSTGRESDB_PASSWORD: leadsifter_dev
       EXECUTIONS_DATA_SAVE_ON_ERROR: all
       EXECUTIONS_DATA_SAVE_ON_SUCCESS: none
+      META_API_BASE: http://host.docker.internal:8000/mock/facebook
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
     depends_on:
       postgres:
         condition: service_healthy

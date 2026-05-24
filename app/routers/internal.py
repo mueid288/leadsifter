@@ -34,10 +34,12 @@ async def get_broker_credentials(broker_id: uuid.UUID = Path(...)):
         if not broker:
             raise HTTPException(status_code=404, detail="Broker not found")
 
+        meta_api_base = "http://host.docker.internal:8000/mock/facebook" if settings.DEBUG else "https://graph.facebook.com"
         return {
             "meta_token": decrypt(broker.meta_token_enc),
             "phone_id": decrypt(broker.meta_phone_id_enc),
             "agency_name": broker.agency_name,
+            "meta_api_base": meta_api_base,
         }
 
 
